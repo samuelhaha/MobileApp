@@ -2,67 +2,35 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/src/pages/about_page.dart';
-import 'package:flutter_application_1/src/pages/favourite.dart';
+import 'package:flutter_application_1/src/pages/cartprovider.dart';
+import 'package:flutter_application_1/src/pages/home_page.dart';
 import 'package:flutter_application_1/src/pages/order_page.dart';
-import 'home_page.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'signin.page.dart';
+import 'package:flutter_application_1/src/pages/profile_page.dart';
+import 'package:flutter_application_1/src/pages/signin.page.dart';
+import 'package:provider/provider.dart';
 
-class ProfilePage extends StatefulWidget {
-  @override
-  _ProfilePageState createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
+class FavouritePage extends StatelessWidget {
   final user = FirebaseAuth.instance.currentUser;
-
-  TextEditingController emailController;
-  TextEditingController passwordController;
-
-  setDataToTextField(data) {
-    return Column(
-      children: [
-        TextFormField(
-          controller: emailController =
-              TextEditingController(text: data['email']),
-        ),
-        TextFormField(
-          controller: passwordController =
-              TextEditingController(text: data['password']),
-        ),
-        ElevatedButton(onPressed: () => updateData(), child: Text("Update"))
-      ],
-    );
-  }
-
-  updateData() {
-    CollectionReference _collectionRef =
-        FirebaseFirestore.instance.collection("users");
-    return _collectionRef.doc(FirebaseAuth.instance.currentUser.email).update({
-      "email": emailController.text,
-      "password": passwordController.text,
-    }).then((value) => print("Updated Successfully"));
-  }
 
   @override
   Widget build(BuildContext context) {
+    var cartProvider = Provider.of<CartProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: const Text(
             // 'Navigation Drawer',
-            'Profile'),
+            'Favourites'),
         backgroundColor: const Color(0xff764abc),
       ),
       drawer: Drawer(
         child: ListView(
-          // Important: Remove any padding from the ListView.
           padding: EdgeInsets.zero,
           children: [
-            // UserAccountsDrawerHeader(
-            //   accountName: Text('Samuel'),
-            //   accountEmail: Text('lhbxsam@gmail.com')
-            // ),
+            SizedBox(
+              height: 30.0,
+            ),
             Container(
               width: 100.0,
               height: 100.0,
@@ -115,7 +83,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               },
             ),
-
             ListTile(
               leading: Icon(
                 Icons.bookmarks_rounded,
@@ -159,24 +126,48 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(15),
-          child: StreamBuilder(
+        child: StreamBuilder(
             stream: FirebaseFirestore.instance
-                .collection("users")
+                .collection("favourites")
                 .doc(FirebaseAuth.instance.currentUser.email)
+                .collection("items")
                 .snapshots(),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              var data = snapshot.data;
-              if (data == null) {
+            builder:
+                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.hasError) {
                 return Center(
-                  child: CircularProgressIndicator(),
+                  child: Text("Something is Wrong"),
                 );
               }
-              return setDataToTextField(data);
-            },
-          ),
-        ),
+              return ListView.builder(
+                  itemCount: snapshot.data.docs.length,
+                  itemBuilder: (_, index) {
+                    DocumentSnapshot documentSnapshot =
+                        snapshot.data.docs[index];
+                    return Card(
+                      elevation: 5,
+                      child: ListTile(
+                        leading: Text(documentSnapshot['name']),
+                        title: Text(
+                          "\$ ${documentSnapshot['price']}",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        trailing: CircleAvatar(
+                          child: Icon(Icons.clear),
+                        ),
+                        onTap: () {
+                          FirebaseFirestore.instance
+                              .collection("favourites")
+                              .doc(FirebaseAuth.instance.currentUser
+                                  .email) //the account's email that is currently logged in right now!
+                              .collection("items")
+                              .doc(documentSnapshot.id)
+                              .delete(); //delete after pressing clear icon!
+                        },
+                      ),
+                    );
+                  });
+            }),
       ),
     );
   }

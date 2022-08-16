@@ -1,233 +1,271 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/src/pages/about_page.dart';
+import 'package:flutter_application_1/src/pages/favourite.dart';
+import 'package:flutter_application_1/src/pages/fooddetail.dart';
 import 'package:flutter_application_1/src/pages/order_page.dart';
-import 'package:flutter_application_1/src/widgets/food_category.dart';
-import '../widgets/food_category.dart';
+import 'package:flutter_application_1/src/pages/profile_page.dart';
+import 'package:flutter_application_1/src/pages/signin.page.dart';
+import 'package:provider/provider.dart';
+
 import 'cartprovider.dart';
-import 'drawer.dart';
-import '../widgets/bought_food.dart';
 
-import '../data/food_data.dart';
-import '../models/food_model.dart';
-
-// import 'package:flutter_application_1/CartProvider.dart';
-
-
-class HomePage extends StatefulWidget{
+class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>{
+class _HomePageState extends State<HomePage> {
+  final user = FirebaseAuth.instance.currentUser;
+  List products = [];
+  var firestoreInstance = FirebaseFirestore.instance;
 
-  List<Food> _foods = foods;
-
+  fetchProducts() async {
+    QuerySnapshot qn = await firestoreInstance.collection("products").get();
+    setState(() {
+      for (int i = 0; i < qn.docs.length; i++) {
+        products.add({
+          "product-name": qn.docs[i]["product-name"],
+          "product-description": qn.docs[i]["product-description"],
+          "product-price": qn.docs[i]["product-price"],
+          "product-img": qn.docs[i]["product-img"],
+        });
+      }
+    });
+  }
 
   @override
-  Widget build(BuildContext context){
+  void initState() {
+    fetchProducts();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // var cartProvider = Provider.of<CartProvider>(context);
+
     return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(top: 50.0, left: 20.0, right: 20.0), //away from top = 50, away from left = 20, away from right = 20 
-        children: <Widget>[
-          // HomeTopInfo(),
-          FoodCategory(),
-          SizedBox(height: 20.0,), //margin between the listview and others (Search Field)
-    
-          SizedBox(height: 20.0,), //margin between the Search bar and others (Text)
-          Row(        //Align Widgets in horizontal order (left to right)
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                "Frequently bought foods",
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
-                ),
+        //a widget in Flutter used to implements the basic material design visual layout structure.
+
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text(
+              // 'Navigation Drawer',
+              'Food Center'),
+          // actions: <Widget>[
+          //   //CartButton = action
+          //   Padding(
+          //     padding: const EdgeInsets.all(10.0),
+          //     child: Container(
+          //         height: 150.0,
+          //         width: 30.0,
+          //         child: InkWell(
+          //           splashColor: Colors.redAccent,
+          //           highlightColor: Colors.blueAccent.withOpacity(0.5),
+          //           onTap: () {
+          //             Navigator.push(
+          //               //Add a route to the stack of routes
+          //               context,
+          //               MaterialPageRoute(
+          //                 builder: (context) => OrderPage(),
+          //               ),
+          //             );
+          //           },
+          //           child: Stack(
+          //             //placing on top of each other
+          //             children: <Widget>[
+          //               IconButton(
+          //                   icon: Icon(
+          //                     Icons.shopping_cart,
+          //                     color: Colors.white, //Cart will be in white color
+          //                   ),
+          //                   onPressed: () {
+          //                     OrderPage();
+          //                   }),
+          //               Positioned(
+          //                 //use to position child widgets in stack widget
+          //                 child: Stack(
+          //                   children: <Widget>[
+          //                     Icon(Icons.brightness_1, //number in circle
+          //                         size: 20.0,
+          //                         color: Colors.red[700]),
+          //                     Positioned(
+          //                       top: 3.0,
+          //                       right: 7,
+          //                       child: Center(
+          //                         child: Text(
+          //                           cartProvider.count.toString(),
+          //                           style: TextStyle(
+          //                               color: Colors.white,
+          //                               fontSize: 12.0,
+          //                               fontWeight: FontWeight.w500),
+          //                         ),
+          //                       ),
+          //                     )
+          //                   ],
+          //                 ),
+          //               )
+          //             ],
+          //           ),
+          //         )),
+          //   )
+          // ],
+          backgroundColor: const Color(0xff764abc),
+        ),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              SizedBox(
+                height: 30.0,
               ),
-              GestureDetector(
-                onTap: (){},
+              Container(
+                width: 100.0,
+                height: 100.0,
+                decoration: new BoxDecoration(color: Colors.red),
+                child: Center(
                   child: Text(
-                  "View All",
-                   style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orangeAccent
+                    'signed in as: ' + user.email,
+                    style: TextStyle(
+                      fontSize: 17.0,
+                    ),
                   ),
                 ),
               ),
+              ListTile(
+                leading: Icon(
+                  Icons.home,
+                ),
+                title: const Text('Home'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.favorite_outline_outlined,
+                ),
+                title: const Text('FavouritePage'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FavouritePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.accessibility_sharp,
+                ),
+                title: const Text('About'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AboutPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.bookmarks_rounded,
+                ),
+                title: const Text('Order Page'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrderPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.person,
+                ),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.logout,
+                ),
+                title: const Text('Log Out'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                },
+              ),
             ],
           ),
-          SizedBox(height: 20.0,), 
-          Column(
-            children: _foods.map(_buildFoodItems).toList(),
+        ),
+        body: SafeArea(
+          child: Container(
+            child: Column(
+              children: [
+                // ElevatedButton(
+                //   onPressed: () => print(products),
+                //   child: Text("Print Products"),
+                // ),
+                Expanded(
+                  child: GridView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: products.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2, childAspectRatio: 1),
+                      itemBuilder: (_, index) {
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      FoodDetailPage(products[index]))),
+                          child: Card(
+                            elevation: 3,
+                            child: Column(
+                              children: [
+                                AspectRatio(
+                                    aspectRatio: 1.5,
+                                    child: Container(
+                                      child: Image.network(
+                                          products[index]["product-img"]),
+                                    )),
+                                Text(
+                                  "${products[index]["product-name"]}",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20),
+                                ),
+                                Text(
+                                  "\$ ${products[index]["product-price"].toString()}",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                )
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFoodItems(Food food){
-    return Container(
-      margin: EdgeInsets.only(bottom: 20.0), //Margin of 20cm (vertical = bottom) between each category of food 
-      child: BoughtFoods(
-        id: food.id,
-        name: food.name,
-        imagePath: food.imagePath,
-        category: food.category,
-        // discount: food.discount,
-        price: food.price,
-        ratings: food.ratings,
-      ),
-    );
+        ));
   }
 }
-
-// class HomePage extends StatelessWidget {
-//   final _shoeName = [
-//     'Kaptir Super',
-//     'Ultra Boost',
-//     'Ultra DNA',
-//     'Air Force FlyKnit',
-//     'Pegasus Trail',
-//     'React Infinity'
-//   ];
-
-//   final _shoePrice = [
-//     '\$128.0',
-//     '\$132.0',
-//     '\$139.0',
-//     '\$205.0',
-//     '\$146.0',
-//     '\$130.0',
-//   ];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     //Inject Provider Instance
-
-//     var cartProvider = Provider.of<CartProvider>(context);
-
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('ProductPage(Provider)'),
-//         actions: <Widget>[
-//           Padding(
-//             padding: const EdgeInsets.all(10.0),
-//             child: Container(
-//               height: 150.0,
-//               width: 30.0,
-//               child: InkWell(
-//                 splashColor: Colors.redAccent,
-//                 highlightColor: Colors.blueAccent.withOpacity(0.5),
-//                 onTap: () {
-//                   Navigator.push(
-//                     context,
-//                     MaterialPageRoute(
-//                       builder: (context) => OrderPage(),
-//                     ),
-//                   );
-//                 },
-//                 child: Stack(
-//                   children: <Widget>[
-//                     Container(
-//                       child: Column(),
-//                     ),
-//                     IconButton(
-//                       icon: Icon(
-//                         Icons.shopping_cart,
-//                         color: Colors.white,
-//                       ),
-//                       onPressed: null,
-//                     ),
-//                     Positioned(
-//                       child: Stack(
-//                         children: <Widget>[
-//                           Icon(Icons.brightness_1,
-//                               size: 20.0, color: Colors.red[700]),
-//                           Positioned(
-//                             top: 3.0,
-//                             right: 7,
-//                             child: Center(
-//                               child: Text(
-//                                 cartProvider.count.toString(),
-//                                 style: TextStyle(
-//                                     color: Colors.white,
-//                                     fontSize: 12.0,
-//                                     fontWeight: FontWeight.w500),
-//                               ),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     )
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           )
-//         ],
-//       ),
-//       body: ListView(
-//         children: List.generate(6, (index) {
-//           return InkWell(
-//             splashColor: Colors.blueAccent,
-//             highlightColor: Colors.blueAccent.withOpacity(1.0),
-//             onTap: () {
-//               cartProvider.addToCart(index);
-//             },
-//             child: _buildGridCards(index, 'images/shoe${index + 1}.jpg',
-//                 _shoeName[index], _shoePrice[index]),
-//           );
-//         }),
-//       ),
-//     );
-//   }
-
-//   Widget _buildGridCards(
-//       int index, String imgPath, String shoeName, String shoePrice) {
-//     return Card(
-//       color: Colors.lightBlueAccent[50],
-//       elevation: 5,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(8.0),
-//             child: Container(
-//               height: 140,
-//               width: 150,
-//               decoration: BoxDecoration(
-//                   image: DecorationImage(
-//                     image: AssetImage(imgPath),
-//                     fit: BoxFit.fitWidth,
-//                   ),
-//                   borderRadius: BorderRadius.circular(12),
-//                   boxShadow: [
-//                     BoxShadow(
-//                         blurRadius: 10,
-//                         color: Colors.black,
-//                         offset: Offset(1, 3))
-//                   ]),
-//             ),
-//           ),
-//           Text(
-//             shoeName,
-//             style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-//           ),
-//           Text(
-//             shoePrice,
-//             style: TextStyle(fontSize: 14.0),
-//           ),
-//           IconButton(
-//             icon: Icon(
-//               Icons.add_circle,
-//               color: Colors.black,
-//             ),
-//             onPressed: null,
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

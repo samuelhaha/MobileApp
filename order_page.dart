@@ -1,6 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/src/pages/cartprovider.dart';
+import 'package:flutter_application_1/src/pages/favourite.dart';
+import 'package:flutter_application_1/src/pages/profile_page.dart';
+import 'package:provider/provider.dart';
+import 'about_page.dart';
+import 'home_page.dart';
 import 'signin.page.dart';
-import '../widgets/order_card.dart';
 
 class OrderPage extends StatefulWidget {
   @override
@@ -8,160 +15,160 @@ class OrderPage extends StatefulWidget {
 }
 
 class _OrderPageState extends State<OrderPage> {
+  final user = FirebaseAuth.instance.currentUser;
+
+  // OrderPage({Key key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Food Cart",
-          style: TextStyle(
-            color: Colors.black,
-          ),
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text(
+              // 'Navigation Drawer',
+              'Shopping Cart'),
+          backgroundColor: const Color(0xff764abc),
         ),
-        backgroundColor:Colors.white,
-        elevation: 0.0,
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: EdgeInsets.symmetric(horizontal: 10.0),
-        scrollDirection: Axis.vertical,
-        children: <Widget>[
-          OrderCard(),
-          OrderCard(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalContainer() {
-    return Container(
-      height: 220.0,
-      padding: EdgeInsets.only(
-        left: 10.0,
-        right: 10.0,
-      ),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                "Total",
-                style: TextStyle(
-                    color: Color(0xFF9BA7C6),
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold),
-              ),
-              Text(
-                "30",
-                style: TextStyle(
-                    color: Color(0xFF6C6D6D),
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 10.0,
-          ),
-         
-          SizedBox(
-            height: 20.0,
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) => LoginPage()));
-      
-            },
-            child: Container(
-              height: 50.0,
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(35.0),
-              ),
-              child: Center(
-                child: Text(
-                  "Checkout?",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                width: 100.0,
+                height: 100.0,
+                decoration: new BoxDecoration(color: Colors.red),
+                child: Center(
+                  child: Text(
+                    'signed in as: ' + user.email,
+                    style: TextStyle(
+                      fontSize: 17.0,
+                    ),
                   ),
                 ),
               ),
-            ),
+              ListTile(
+                leading: Icon(
+                  Icons.home,
+                ),
+                title: const Text('Home'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.favorite_outline_outlined,
+                ),
+                title: const Text('FavouritePage'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FavouritePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.accessibility_sharp,
+                ),
+                title: const Text('About'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AboutPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.bookmarks_rounded,
+                ),
+                title: const Text('Order Page'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrderPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.person,
+                ),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.logout,
+                ),
+                title: const Text('Log Out'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                },
+              ),
+            ],
           ),
-          SizedBox(
-            height: 20.0,
-          ),
-        ],
-      ),
-    );
+        ),
+        body: SafeArea(
+            child: StreamBuilder(
+          stream: FirebaseFirestore.instance
+              .collection("cart")
+              .doc(FirebaseAuth.instance.currentUser.email)
+              .collection("items")
+              .snapshots(),
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text("Something is wrong"),
+              );
+            }
+            return ListView.builder(
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (_, index) {
+                  DocumentSnapshot documentSnapshot = snapshot.data.docs[index];
+                  return Card(
+                    elevation: 5,
+                    child: ListTile(
+                      leading: Text(documentSnapshot['name']),
+                      title: Text(
+                        "\$ ${documentSnapshot['price']}",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      trailing: CircleAvatar(
+                        child: Icon(Icons.clear),
+                      ),
+                      onTap: () {
+                        FirebaseFirestore.instance
+                            .collection("cart")
+                            .doc(FirebaseAuth.instance.currentUser
+                                .email) //the account's email that is currently logged in right now!
+                            .collection("items")
+                            .doc(documentSnapshot.id)
+                            .delete(); //delete after pressing clear icon!
+                      },
+                    ),
+                  );
+                });
+          },
+        )));
   }
 }
-
-// import 'package:flutter/material.dart';
-
-// import './cartprovider.dart';
-
-// class OrderPage extends StatelessWidget{
-//   var Provider;
-
- 
-//   OrderPage({Key key}) : super(key: key);
-//     @override
-
-//     Widget build(BuildContext context){
- 
-//     var cartProvider = Provider.of<CartProvider>(context);
-//     var cart = cartProvider.cart;
-
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text("Shopping Cart"),
-//         actions: [
-//           Center(
-//             child: Text(
-//               'Total: ' + cartProvider.cartCount.toString(),
-//               style: TextStyle(
-//                 color: Colors.white,
-//                 fontSize:16.0,
-//                 fontWeight: FontWeight.w500),
-//               ),
-//             ),
-//         ],
-//       ),
-//       body: ListView.builder(
-//         itemCount: cart.length,
-//         itemBuilder: (context,index){
-//           int cartIndex = cart.keys.toList()[index];
-//           int count = cart[cartIndex];
-//           return ListTile(
-//             leading: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: Container(
-//                 height: 100,
-//                 width: 90,
-//                 decoration: BoxDecoration(
-//                   image: DecorationImage(
-//                     image: AssetImage("images/shoe_${cartIndex + 1}.jpg"),
-//                     fit: BoxFit.cover,
-//                   ),
-//                   borderRadius: BorderRadius.circular(5),
-//                 ),
-//               ),
-//             ),
-//             title: Text('Quantity:$count'),
-//             trailing: IconButton(
-//               icon: Icon(Icons.clear),
-//               onPressed:(){
-//                 cartProvider.clear(cartIndex);
-//               },
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
